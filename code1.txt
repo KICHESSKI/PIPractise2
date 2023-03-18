@@ -1,0 +1,54 @@
+import pandas as pd
+import pymysql.cursors
+import matplotlib.pyplot as plt
+
+connection = pymysql.connect(host="127.0.0.1", user="root", password = "polypolyiikon123", db="mydb", charset = "utf8mb4", cursorclass = pymysql.cursors.DictCursor)
+
+cur = connection.cursor()
+cur.execute("Select * FROM product")
+rows = cur.fetchall()
+df = pd.DataFrame(rows)
+print(df)
+
+products = {}
+for i in df["product_id"].unique():
+    cur.execute(f"SELECT sum(price) as sum FROM mydb.order WHERE product1_id = {i}")
+    product_sum = cur.fetchone()
+
+    products.update({f"Product № {i}": product_sum['sum']})
+
+# Строим гистограмму
+plt.figure()
+plt.title("Суммарный доход с продукта")
+plt.ylabel("Суммарная доход")
+plt.xlabel("Продукт")
+plt.bar(products.keys(), products.values())
+plt.show()
+
+
+cur.execute(f"SELECT count(order_id) as count_order, order_date "
+            f"from mydb.order group by order_date order by order_date")
+data = cur.fetchall()
+data = {dict['order_date']: dict['count_order'] for dict in data}
+
+# Строим гистограмму
+plt.figure()
+plt.title("Количество заказов за день")
+plt.ylabel("Количество заказов")
+plt.xlabel("Дата")
+plt.bar(data.keys(), data.values())
+plt.show()
+
+
+cur.execute(f"SELECT count(recipe_id) as count_ingredient, product_name "
+            f"from recipe, product where recipe.product2_id = product.product_id group by product.product_id")
+data = cur.fetchall()
+data = {dict['product_name']: dict['count_ingredient'] for dict in data}
+
+# Строим гистограмму
+plt.figure()
+plt.title("Количество ингредиентов в рецепте продукта")
+plt.ylabel("Количество ингредиентов")
+plt.xlabel("Продукт")
+plt.bar(data.keys(), data.values())
+plt.show()
